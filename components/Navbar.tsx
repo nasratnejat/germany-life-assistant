@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { PanelLeftClose } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/client";
-import { CATEGORIES, FEATURES } from "../lib/features";
+import { CATEGORIES, FEATURES } from "@/lib/features";
 
 export default function Navbar({ user }) {
-  const { toggleSidebar } = useSidebar();
+  const { open, toggleSidebar } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const feature = FEATURES.find((f) => f.href === pathname);
   const category = feature
@@ -20,53 +25,65 @@ export default function Navbar({ user }) {
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Account";
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   async function handleLogout() {
+    setMenuOpen(false);
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+    <header className="flex items-center justify-between border-b border-slate-200/60 px-4 sm:px-5 py-3">
+      {" "}
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-md hover:bg-slate-100 text-slate-600 flex-shrink-0"
-          aria-label="Toggle sidebar"
+          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+          className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors flex-shrink-0"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"
-            />
-          </svg>
+          <PanelLeftClose
+            className={`w-4.5 h-4.5 transition-transform duration-300 ease-in-out ${
+              open ? "" : "rotate-180"
+            }`}
+          />
         </button>
 
-        <div className="text-sm text-slate-700 truncate">
-          <Link href="/" className="text-slate-400 hover:text-slate-600">
-            Klar
-          </Link>
-          {category && (
-            <>
-              <span className="text-slate-300 mx-1.5">/</span>
-              <Link
-                href={`/category/${category.slug}`}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                {category.title}
-              </Link>
-            </>
-          )}
+        <Link
+          href="/"
+          className="text-xl font-bold tracking-tight text-slate-800 flex-shrink-0"
+        >
+          Klar
+        </Link>
+
+        <div className="text-sm text-slate-700 truncate hidden sm:block">
           {feature && (
             <>
               <span className="text-slate-300 mx-1.5">/</span>
+              {category && (
+                <>
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    {category.title}
+                  </Link>
+                  <span className="text-slate-300 mx-1.5">/</span>
+                </>
+              )}
               <span className="font-medium text-slate-800">
                 {feature.title}
               </span>
@@ -74,57 +91,43 @@ export default function Navbar({ user }) {
           )}
         </div>
       </div>
-
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Link
-          href="/"
-          className="p-2 rounded-full hover:bg-slate-100 text-slate-500"
-          aria-label="Search"
-        >
-          <svg
-            className="w-4.5 h-4.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.7}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </Link>
-
         {user ? (
-          <div className="flex items-center gap-1.5">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100"
-            >
-              <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold flex items-center justify-center">
-                {displayName?.[0]?.toUpperCase() ?? "U"}
-              </span>
-              <span className="text-sm font-medium text-slate-700 truncate max-w-[120px]">
-                {displayName}
-              </span>
-            </Link>
+          <div className="relative" ref={menuRef}>
             <button
-              onClick={handleLogout}
-              className="text-xs text-slate-400 hover:text-red-500 px-2 py-1"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="w-9 h-9 rounded-full bg-teal-100 text-teal-700 text-sm font-bold flex items-center justify-center hover:ring-2 hover:ring-teal-200 transition-all"
+              aria-label="Account menu"
+              aria-expanded={menuOpen}
             >
-              Log out
+              {displayName?.[0]?.toUpperCase() ?? "U"}
             </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Account
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-3.5 py-2 text-sm text-red-500 hover:bg-red-50"
+                >
+                  Log out
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <Link
             href="/login"
-            className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100"
+            className="w-9 h-9 rounded-full bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center hover:bg-slate-300 transition-colors"
+            aria-label="Log in"
           >
-            <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold flex items-center justify-center">
-              G
-            </span>
-            <span className="text-sm font-medium text-slate-700">Log in</span>
+            G
           </Link>
         )}
       </div>

@@ -2,8 +2,13 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
+interface Message {
+  role: "user" | "assistant";
+  text: string;
+}
+
 export default function ChatPage() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       text: "Hi! I'm your Klar assistant. Ask me anything about German paperwork, life admin, or just chat — I'm here to help.",
@@ -11,7 +16,7 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -20,7 +25,7 @@ export default function ChatPage() {
   async function sendMessage() {
     if (!input.trim() || loading) return;
 
-    const userMessage = { role: "user", text: input };
+    const userMessage: Message = { role: "user", text: input };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
@@ -46,15 +51,16 @@ export default function ChatPage() {
         ]);
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setMessages([
         ...updatedMessages,
-        { role: "assistant", text: `Something went wrong: ${err.message}` },
+        { role: "assistant", text: `Something went wrong: ${message}` },
       ]);
     }
     setLoading(false);
   }
 
-  function handleKeyDown(e) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();

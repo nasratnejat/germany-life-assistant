@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CATEGORIES, FEATURES, getCategoryFeatures } from "../lib/features";
+import { CATEGORIES, FEATURES, getCategoryFeatures } from "@/lib/features";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,39 +28,63 @@ export default function Home() {
 
   return (
     <main className="p-4 sm:p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-800">
-          Welcome back 👋
+      <div className="mb-6 sm:mb-8 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+          Welcome
         </h1>
         <p className="text-slate-500 text-sm mt-1">
           What do you need help with today?
         </p>
       </div>
 
-      <Card className="mb-10 rounded-2xl border-slate-200 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="relative">
-            <svg
-              className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+      <Card className="mb-8 sm:mb-10 rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="pt-5 sm:pt-6 pb-5 sm:pb-6">
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex items-center gap-2"
+          >
+            <div className="relative flex-1">
+              <svg
+                className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <Input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search for a tool — e.g. 'rent', 'cv', 'tax'..."
+                className="pl-9 h-11 text-base sm:h-10 sm:text-sm"
               />
-            </svg>
-            <Input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for a tool — e.g. 'rent', 'cv', 'tax'..."
-              className="pl-9"
-            />
-          </div>
+            </div>
+            <button
+              type="submit"
+              aria-label="Search"
+              className="flex-shrink-0 w-11 h-11 sm:w-10 sm:h-10 rounded-lg bg-teal-600 text-white flex items-center justify-center hover:bg-teal-700 active:bg-teal-800 transition-colors"
+            >
+              <svg
+                className="w-4.5 h-4.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+          </form>
 
           {query.trim() && (
             <div className="mt-4 space-y-2">

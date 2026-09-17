@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { FEATURES, CATEGORIES } from "@/lib/features";
 
 interface PageShellProps {
   title: string;
@@ -16,14 +20,23 @@ export default function PageShell({
   wide = false,
   children,
 }: PageShellProps) {
+  const pathname = usePathname();
+  const feature = FEATURES.find((f) => f.href === pathname);
+  const category = feature
+    ? CATEGORIES.find((c) => c.slug === feature.category)
+    : null;
+
+  const backHref = category ? `/category/${category.slug}` : "/";
+  const backLabel = category ? `Back to ${category.title}` : "Back to Klar";
+
   return (
     <main className="min-h-screen bg-slate-50 p-4 sm:p-8">
       <div className={`w-full ${wide ? "max-w-3xl" : "max-w-2xl"} mx-auto`}>
         <Link
-          href="/"
+          href={backHref}
           className="text-sm text-slate-500 hover:text-teal-600 inline-flex items-center gap-1 mb-6"
         >
-          ← Back to Klar
+          ← {backLabel}
         </Link>
 
         <div className="mb-8 flex items-start gap-4">

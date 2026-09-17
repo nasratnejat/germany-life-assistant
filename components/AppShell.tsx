@@ -8,18 +8,16 @@ const AppSidebar = dynamic(() => import("./AppSidebar"), { ssr: false });
 
 export default function AppShell({ children, user }) {
   if (!user) {
-    // No logged-in user — the middleware only lets /login through in this case,
-    // so just render it full-screen with no sidebar/navbar.
     return <>{children}</>;
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <Navbar user={user} />
-        {children}
-      </SidebarInset>
+    <SidebarProvider className="flex flex-col h-screen w-full">
+      <Navbar user={user} />
+      <div className="flex flex-1 min-h-0 w-full">
+        <AppSidebar />
+        <SidebarInset>{children}</SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
