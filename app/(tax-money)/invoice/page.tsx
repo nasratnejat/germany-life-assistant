@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import PageShell from "../../components/PageShell";
-import { inputClass, buttonClass } from "../../lib/styles";
+import PageShell from "@/components/PageShell";
+import { inputClass } from "@/lib/styles";
 import jsPDF from "jspdf";
 
 const emptyItem = () => ({ description: "", quantity: "1", unitPrice: "" });

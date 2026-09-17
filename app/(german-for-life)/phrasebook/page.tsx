@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import PageShell from "../../components/PageShell";
-import SearchList from "../../components/SearchList";
+import PageShell from "@/components/PageShell";
+import SearchList from "@/components/SearchList";
 
 const CATEGORIES = [
   "All",

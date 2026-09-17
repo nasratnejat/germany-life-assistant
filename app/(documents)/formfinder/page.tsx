@@ -1,7 +1,7 @@
 "use client";
 
-import PageShell from "../../components/PageShell";
-import SearchList from "../../components/SearchList";
+import PageShell from "@/components/PageShell";
+import SearchList from "@/components/SearchList";
 
 const SITUATIONS = [
   {

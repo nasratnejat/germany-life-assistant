@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import PageShell from "../../components/PageShell";
-import ResultBadge from "../../components/ResultBadge";
-import ResultList from "../../components/ResultList";
-import { inputClass, buttonClass } from "../../lib/styles";
+import PageShell from "@/components/PageShell";
+import ResultBadge from "@/components/ResultBadge";
+import ResultList from "@/components/ResultList";
+import { inputClass, buttonClass } from "@/lib/styles";
 
 const assessmentTone = {
   strong: "good",
