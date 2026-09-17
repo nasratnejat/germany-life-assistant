@@ -6,30 +6,51 @@ import PageShell from "@/components/PageShell";
 import { inputClass, buttonClass } from "@/lib/styles";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SavingsGoalView({ initialGoals, userId }) {
+interface Goal {
+  id: string;
+  name: string;
+  target_amount: number | string;
+  current_amount: number | string;
+  monthly_contribution: number | string;
+}
+
+interface SavingsGoalViewProps {
+  initialGoals: Goal[];
+  userId: string;
+}
+
+export default function SavingsGoalView({
+  initialGoals,
+  userId,
+}: SavingsGoalViewProps) {
   const supabase = createClient();
 
-  const [goals, setGoals] = useState(initialGoals);
+  const [goals, setGoals] = useState<Goal[]>(initialGoals);
   const [newName, setNewName] = useState("");
   const [newTarget, setNewTarget] = useState("");
   const [newContribution, setNewContribution] = useState("");
-  const [contributionInputs, setContributionInputs] = useState({});
+  const [contributionInputs, setContributionInputs] = useState<
+    Record<string, string>
+  >({});
 
-  // Emergency fund helper
   const [efExpenses, setEfExpenses] = useState("");
   const [efMonths, setEfMonths] = useState(3);
   const efTarget = (parseFloat(efExpenses) || 0) * efMonths;
 
-  async function addGoal(name, target, monthlyContribution = 0) {
+  async function addGoal(
+    name: string,
+    target: string | number,
+    monthlyContribution: string | number = 0,
+  ) {
     if (!name || !target) return;
     const { data, error } = await supabase
       .from("savings_goals")
       .insert({
         user_id: userId,
         name,
-        target_amount: parseFloat(target) || 0,
+        target_amount: parseFloat(String(target)) || 0,
         current_amount: 0,
-        monthly_contribution: parseFloat(monthlyContribution) || 0,
+        monthly_contribution: parseFloat(String(monthlyContribution)) || 0,
       })
       .select()
       .single();
@@ -39,7 +60,7 @@ export default function SavingsGoalView({ initialGoals, userId }) {
     }
   }
 
-  function handleAddCustom(e) {
+  function handleAddCustom(e: React.FormEvent) {
     e.preventDefault();
     addGoal(newName.trim(), newTarget, newContribution);
     setNewName("");
@@ -53,11 +74,12 @@ export default function SavingsGoalView({ initialGoals, userId }) {
     setEfExpenses("");
   }
 
-  async function addContribution(goalId) {
+  async function addContribution(goalId: string) {
     const amount = parseFloat(contributionInputs[goalId]) || 0;
     if (!amount) return;
     const goal = goals.find((g) => g.id === goalId);
-    const newAmount = (parseFloat(goal.current_amount) || 0) + amount;
+    if (!goal) return;
+    const newAmount = (parseFloat(String(goal.current_amount)) || 0) + amount;
 
     const { error } = await supabase
       .from("savings_goals")
@@ -77,7 +99,7 @@ export default function SavingsGoalView({ initialGoals, userId }) {
     }
   }
 
-  async function deleteGoal(goalId) {
+  async function deleteGoal(goalId: string) {
     const { error } = await supabase
       .from("savings_goals")
       .delete()
@@ -94,7 +116,6 @@ export default function SavingsGoalView({ initialGoals, userId }) {
       description="Set savings targets and log your progress toward them — including a ready-made Emergency Fund calculator."
       wide
     >
-      {/* Emergency fund helper */}
       <div className="bg-violet-50 border border-violet-200 rounded-xl p-6 mb-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-1">
           Quick start: Emergency Fund
@@ -149,7 +170,6 @@ export default function SavingsGoalView({ initialGoals, userId }) {
         </div>
       </div>
 
-      {/* Goal list */}
       <div className="space-y-4 mb-6">
         {goals.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
@@ -159,9 +179,10 @@ export default function SavingsGoalView({ initialGoals, userId }) {
           </div>
         ) : (
           goals.map((goal) => {
-            const target = parseFloat(goal.target_amount) || 0;
-            const current = parseFloat(goal.current_amount) || 0;
-            const contribution = parseFloat(goal.monthly_contribution) || 0;
+            const target = parseFloat(String(goal.target_amount)) || 0;
+            const current = parseFloat(String(goal.current_amount)) || 0;
+            const contribution =
+              parseFloat(String(goal.monthly_contribution)) || 0;
             const percent =
               target > 0 ? Math.min(100, (current / target) * 100) : 0;
             const monthsLeft =
@@ -229,7 +250,6 @@ export default function SavingsGoalView({ initialGoals, userId }) {
         )}
       </div>
 
-      {/* New goal form */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">
           New savings goal

@@ -996,7 +996,7 @@ export const HIDDEN_FROM_CATEGORIES = [
   "/dashboard",
 ];
 
-export function getCategoryFeatures(slug) {
+export function getCategoryFeatures(slug: string) {
   return FEATURES.filter(
     (f) => f.category === slug && !HIDDEN_FROM_CATEGORIES.includes(f.href),
   );

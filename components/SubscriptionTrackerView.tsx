@@ -6,10 +6,30 @@ import PageShell from "@/components/PageShell";
 import { inputClass, selectClass, buttonClass } from "@/lib/styles";
 import { createClient } from "@/lib/supabase/client";
 
+interface Subscription {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: number | string;
+  billing_cycle: string;
+  category: string;
+  created_at?: string;
+}
+
+interface QuickAddItem {
+  name: string;
+  category: string;
+}
+
+interface SubscriptionTrackerViewProps {
+  initialSubscriptions: Subscription[];
+  userId: string;
+}
+
 const CATEGORIES = ["Streaming", "Software", "Fitness", "Music", "Other"];
 const CYCLES = ["monthly", "yearly", "weekly"];
 
-const QUICK_ADD = [
+const QUICK_ADD: QuickAddItem[] = [
   { name: "Netflix", category: "Streaming" },
   { name: "Spotify", category: "Music" },
   { name: "Amazon Prime", category: "Streaming" },
@@ -22,8 +42,8 @@ const QUICK_ADD = [
   { name: "ChatGPT Plus", category: "Software" },
 ];
 
-function monthlyEquivalent(sub) {
-  const amount = parseFloat(sub.amount) || 0;
+function monthlyEquivalent(sub: Subscription): number {
+  const amount = parseFloat(String(sub.amount)) || 0;
   if (sub.billing_cycle === "yearly") return amount / 12;
   if (sub.billing_cycle === "weekly") return amount * 4.33;
   return amount;
@@ -32,10 +52,11 @@ function monthlyEquivalent(sub) {
 export default function SubscriptionTrackerView({
   initialSubscriptions,
   userId,
-}) {
+}: SubscriptionTrackerViewProps) {
   const supabase = createClient();
 
-  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
+  const [subscriptions, setSubscriptions] =
+    useState<Subscription[]>(initialSubscriptions);
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newCycle, setNewCycle] = useState("monthly");
@@ -54,14 +75,19 @@ export default function SubscriptionTrackerView({
       .reduce((sum, s) => sum + monthlyEquivalent(s), 0),
   })).filter((c) => c.total > 0);
 
-  async function addSubscription(name, amount, cycle, category) {
+  async function addSubscription(
+    name: string,
+    amount: string | number,
+    cycle: string,
+    category: string,
+  ) {
     if (!name) return;
     const { data, error } = await supabase
       .from("subscriptions")
       .insert({
         user_id: userId,
         name,
-        amount: parseFloat(amount) || 0,
+        amount: parseFloat(String(amount)) || 0,
         billing_cycle: cycle,
         category,
       })
@@ -73,7 +99,7 @@ export default function SubscriptionTrackerView({
     }
   }
 
-  function handleAddCustom(e) {
+  function handleAddCustom(e: React.FormEvent) {
     e.preventDefault();
     addSubscription(newName.trim(), newAmount, newCycle, newCategory);
     setNewName("");
@@ -82,11 +108,11 @@ export default function SubscriptionTrackerView({
     setNewCategory("Other");
   }
 
-  function handleQuickAdd(item) {
+  function handleQuickAdd(item: QuickAddItem) {
     addSubscription(item.name, "", "monthly", item.category);
   }
 
-  async function updateAmount(id, amount) {
+  async function updateAmount(id: string, amount: string) {
     setSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, amount } : s)),
     );
@@ -96,7 +122,7 @@ export default function SubscriptionTrackerView({
       .eq("id", id);
   }
 
-  async function deleteSubscription(id) {
+  async function deleteSubscription(id: string) {
     const { error } = await supabase
       .from("subscriptions")
       .delete()

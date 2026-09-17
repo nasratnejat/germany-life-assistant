@@ -1,9 +1,30 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Wallet } from "lucide-react";
+import { useState } from "react";
+import { Wallet, Check } from "lucide-react";
 import PageShell from "@/components/PageShell";
 import { inputClass, buttonClass } from "@/lib/styles";
+import { createClient } from "@/lib/supabase/client";
+
+interface Category {
+  id: string;
+  name: string;
+  amount: string | number;
+  flexible: boolean;
+}
+
+interface BudgetPlan {
+  mode?: string;
+  income_a?: string | number;
+  income_b?: string | number;
+  categories?: Category[];
+  updated_at?: string;
+}
+
+interface BudgetPlannerViewProps {
+  initialPlan: BudgetPlan | null;
+  userId: string;
+}
 
 const SUGGESTED_CATEGORIES = [
   { name: "Rent (Miete)", flexible: false },
@@ -28,31 +49,53 @@ function getDaysRemainingInMonth() {
   return { daysInMonth, remaining };
 }
 
-export default function BudgetPlannerPage() {
-  const [mode, setMode] = useState("personal"); // "personal" | "shared"
-  const [incomeA, setIncomeA] = useState("");
-  const [incomeB, setIncomeB] = useState("");
-  const [categories, setCategories] = useState([]);
+function withIds(categories: Category[] | undefined): Category[] {
+  return (categories || []).map((c) => ({
+    ...c,
+    id: c.id || crypto.randomUUID(),
+  }));
+}
+
+export default function BudgetPlannerView({
+  initialPlan,
+  userId,
+}: BudgetPlannerViewProps) {
+  const supabase = createClient();
+
+  const [mode, setMode] = useState(initialPlan?.mode || "personal");
+  const [incomeA, setIncomeA] = useState(initialPlan?.income_a ?? "");
+  const [incomeB, setIncomeB] = useState(initialPlan?.income_b ?? "");
+  const [categories, setCategories] = useState<Category[]>(
+    withIds(initialPlan?.categories),
+  );
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newFlexible, setNewFlexible] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(
+    initialPlan?.updated_at ? new Date(initialPlan.updated_at) : null,
+  );
 
-  const { remaining } = useMemo(getDaysRemainingInMonth, []);
+  const { remaining } = getDaysRemainingInMonth();
 
   const totalIncome =
-    (parseFloat(incomeA) || 0) +
-    (mode === "shared" ? parseFloat(incomeB) || 0 : 0);
+    (parseFloat(String(incomeA)) || 0) +
+    (mode === "shared" ? parseFloat(String(incomeB)) || 0 : 0);
   const totalAllocated = categories.reduce(
-    (sum, c) => sum + (parseFloat(c.amount) || 0),
+    (sum, c) => sum + (parseFloat(String(c.amount)) || 0),
     0,
   );
   const unallocated = totalIncome - totalAllocated;
   const flexibleTotal = categories
     .filter((c) => c.flexible)
-    .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+    .reduce((sum, c) => sum + (parseFloat(String(c.amount)) || 0), 0);
   const dailyLimit = remaining > 0 ? flexibleTotal / remaining : 0;
 
-  function addCategory(name, amount, flexible = false) {
+  function addCategory(
+    name: string,
+    amount: string | number,
+    flexible: boolean = false,
+  ) {
     if (!name) return;
     setCategories((prev) => [
       ...prev,
@@ -60,7 +103,7 @@ export default function BudgetPlannerPage() {
     ]);
   }
 
-  function handleAddCustom(e) {
+  function handleAddCustom(e: React.FormEvent) {
     e.preventDefault();
     if (!newName.trim()) return;
     addCategory(newName.trim(), newAmount, newFlexible);
@@ -69,20 +112,42 @@ export default function BudgetPlannerPage() {
     setNewFlexible(false);
   }
 
-  function removeCategory(id) {
+  function removeCategory(id: string) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   }
 
-  function updateAmount(id, amount) {
+  function updateAmount(id: string, amount: string) {
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, amount } : c)),
     );
   }
 
-  function toggleFlexible(id) {
+  function toggleFlexible(id: string) {
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, flexible: !c.flexible } : c)),
     );
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    const { error } = await supabase.from("budget_plans").upsert(
+      {
+        user_id: userId,
+        mode,
+        income_a: parseFloat(String(incomeA)) || 0,
+        income_b: parseFloat(String(incomeB)) || 0,
+        categories: categories.map(({ id, name, amount, flexible }) => ({
+          id,
+          name,
+          amount,
+          flexible,
+        })),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+    setSaving(false);
+    if (!error) setLastSaved(new Date());
   }
 
   return (
@@ -92,29 +157,48 @@ export default function BudgetPlannerPage() {
       description="Plan your monthly budget by category and see how much you can spend per day — solo or shared with a partner."
       wide
     >
-      <div className="flex gap-2 mb-6">
-        <button
-          type="button"
-          onClick={() => setMode("personal")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-            mode === "personal"
-              ? "bg-violet-600 text-white border-violet-600"
-              : "bg-white text-gray-700 border-gray-200"
-          }`}
-        >
-          Personal
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("shared")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-            mode === "shared"
-              ? "bg-violet-600 text-white border-violet-600"
-              : "bg-white text-gray-700 border-gray-200"
-          }`}
-        >
-          Shared / Couple
-        </button>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("personal")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+              mode === "personal"
+                ? "bg-violet-600 text-white border-violet-600"
+                : "bg-white text-gray-700 border-gray-200"
+            }`}
+          >
+            Personal
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("shared")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+              mode === "shared"
+                ? "bg-violet-600 text-white border-violet-600"
+                : "bg-white text-gray-700 border-gray-200"
+            }`}
+          >
+            Shared / Couple
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {lastSaved && (
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              <Check className="h-3.5 w-3.5 text-emerald-500" />
+              Saved {lastSaved.toLocaleTimeString()}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className={buttonClass}
+          >
+            {saving ? "Saving..." : "Save budget"}
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
@@ -305,7 +389,15 @@ export default function BudgetPlannerPage() {
   );
 }
 
-function SummaryCard({ label, value, tone = "gray" }) {
+function SummaryCard({
+  label,
+  value,
+  tone = "gray",
+}: {
+  label: string;
+  value: string;
+  tone?: "gray" | "green" | "red" | "violet";
+}) {
   const toneClasses = {
     gray: "text-gray-900",
     green: "text-emerald-600",
