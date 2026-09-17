@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import PageShell from "../../components/PageShell";
-import { inputClass } from "../../lib/styles";
+import PageShell from "@/components/PageShell";
+import { inputClass } from "@/lib/styles";
 
 // 2026 figures
 const RV_RATE_EMPLOYEE = 0.093; // Rentenversicherung (pension)
@@ -20,9 +20,9 @@ const SONDERAUSGABENPAUSCHALE = 36;
 const ENTLASTUNGSBETRAG_ALLEINERZIEHEND = 4260;
 const ENTLASTUNGSBETRAG_PRO_KIND = 240;
 
-function estimateIncomeTax(zve) {
+function estimateIncomeTax(zve: number): number {
   if (zve <= 12348) return 0;
-  const taxZone2 = (zve) => {
+  const taxZone2 = (zve: number): number => {
     const rate = 0.14 + ((0.2397 - 0.14) * (zve - 12348)) / (17799 - 12348);
     return ((0.14 + rate) / 2) * (zve - 12348);
   };
@@ -39,7 +39,7 @@ function estimateIncomeTax(zve) {
 }
 
 // Approximates Steuerklasse V/VI: no tax-free allowance, tax starts from the first euro
-function estimateIncomeTaxNoAllowance(zve) {
+function estimateIncomeTaxNoAllowance(zve: number): number {
   if (zve <= 0) return 0;
   const z2w = 17799 - 12348;
   const z3w = 69878 - 17799;
@@ -119,7 +119,7 @@ export default function SalaryPage() {
   const netAnnual = grossAnnual - socialAnnual - incomeTax - churchTaxAmount;
   const netMonthly = netAnnual / 12;
 
-  const fmt = (n) =>
+  const fmt = (n: number): string =>
     n.toLocaleString("de-DE", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -320,7 +320,7 @@ export default function SalaryPage() {
 
       <p className="text-xs text-slate-400 mt-4 leading-relaxed">
         This is a rough estimate using 2026 contribution rates and income tax
-        brackets, not an exact payroll calculation. It doesn't account for the
+        brackets, not an exact payroll calculation. It doesnt account for the
         solidarity surcharge (only applies to very high incomes now),
         employer-specific benefits, or the precise official Lohnsteuer tables —
         especially for Steuerklasse V/VI, which are approximated. Use it to get

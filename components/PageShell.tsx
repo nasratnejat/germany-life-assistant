@@ -1,4 +1,13 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+
+interface PageShellProps {
+  title: string;
+  description?: string;
+  icon?: ReactNode;
+  wide?: boolean;
+  children: ReactNode;
+}
 
 export default function PageShell({
   title,
@@ -6,7 +15,7 @@ export default function PageShell({
   icon,
   wide = false,
   children,
-}) {
+}: PageShellProps) {
   return (
     <main className="min-h-screen bg-slate-50 p-4 sm:p-8">
       <div className={`w-full ${wide ? "max-w-3xl" : "max-w-2xl"} mx-auto`}>
