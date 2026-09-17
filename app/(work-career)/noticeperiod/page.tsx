@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import PageShell from "../../components/PageShell";
-import { inputClass } from "../../lib/styles";
-
+import PageShell from "@/components/PageShell";
+import { inputClass } from "@/lib/styles";
 // §622 BGB statutory notice periods (employer terminating, post-probation), in months, "to the end of a calendar month"
 const EMPLOYER_TIERS = [
   { afterYears: 20, months: 7 },
